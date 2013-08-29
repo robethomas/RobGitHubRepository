@@ -1,0 +1,36 @@
+USE [AdvertiserReports]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_rpt_CampaignPerformance_AdUnits]    Script Date: 08/29/2013 12:48:28 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:		<Author,,Rob Thomas>
+-- Create date: 
+-- Description:	
+-- =============================================
+ALTER PROCEDURE [dbo].[usp_rpt_CampaignPerformance_AdUnits]   
+		
+AS
+
+	
+--Grant alter, execute on [dbo].[usp_rpt_CampaignPerformance_AdUnits] to public, WSA_Test		
+BEGIN
+SET NOCOUNT ON;
+
+
+SELECT
+	a.[PlacementID]
+		,IsNull(a.[name],'') as [PlacementName]
+		,IsNull(a.[adunit],'') as [AdUnit]
+FROM
+	[AdvertiserReports].[dbo].[tbl_Sum_AdUnits] a WITH (NOLOCK) 
+	
+	
+END	
+
+		 
+		
