@@ -1,0 +1,170 @@
+USE [AdvertiserReports]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_rpt_CampaignPerformance_AdUnits_AdHoc]    Script Date: 08/29/2013 15:43:11 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:		<Author,,Rob Thomas>
+-- Create date: 
+-- Description:	
+-- =============================================
+ALTER PROCEDURE [dbo].[usp_rpt_CampaignPerformance_AdUnits_Security]   
+		(	
+			--@BeginDate datetime, 
+			--@EndDate datetime, 
+			--@Platform varchar(max), 
+			--@Market varchar(max), 
+			--@Advertiser varchar(max)
+			--,@CampaignName varchar(max)
+			@UserID varchar(max)
+		)
+		
+AS
+
+	
+--Grant alter, execute on [dbo].[usp_rpt_CampaignPerformance_AdUnits_Security] to public, WSA_Test		
+
+BEGIN
+SET NOCOUNT ON;
+
+
+--DECLARE @Platform varchar(max), @Market varchar(max), @UserID varchar(max)
+--SET @UserID = 'us\robethomas'
+--SET @Platform = 'DFP'
+----SET @Platform = 'Yahoo'
+----SET @Platform = 'dfp'
+--		SET @Market = 
+--				'Cincinnati-OH'
+--				--'Pensacola-FL'
+--				--'Asburypark-NJ'
+--				--'Lancaster-OH'
+--				--'Vineland-NJ'
+--				--'Shreveport-LA'
+--				--'B3315'
+--				--'C1028'
+--				--'Greenbay-WI'
+				
+--		--SET @Advertiser = 
+--		--		--'C1019_FISCHER SINGLE FAMILY HOMES'
+--		--		--'C1013_CLassic Cars of Cherry Hill'
+--		--		--'%Cincinnati Bell%'		
+--		--		--'C1171_ALL AMERICAN CHEVY KEA'
+--		--		--'C1171_House_Asbury Park'
+--		--		--'C1503_CARNIVAL FOODS #1 - LANCASTER'
+--		--		--'C1106_CUMBERLAND COUNTY '--GUIDANCE CEN'
+--		--		--'C1503_CARNIVAL FOODS #1 - LANCASTER'
+--		--		--'C1040_J H & A'
+--		--		'C1546_DCMH,NELSON SCHMIDT'
+--		--		--'B3315_University of Buffalo'
+--		--		--'C1028_SPACE COAST CREDIT UNION'
+--		--		--'C1532_Ray Skillman Ford'
+				
+--		--SET @CampaignName = 
+--		--		--'0000458834_CINCINNATI BELL_ONL 6 MO BANNER B' 
+--		--		'C1532_5929277_500 FESTIVALS_KIDS DAY, C1532_5937995_500 festival_home page'
+
+
+
+DECLARE @Platform varchar(max)
+SET @Platform = 'DFP'
+
+
+
+if OBJECT_ID('tempdb..#tAllData') is not null DROP TABLE #tAllData
+if OBJECT_ID('tempdb..#MarketCodes') is not null DROP TABLE #MarketCodes
+
+	--SELECT 
+	--	MarketCode
+	--INTO
+	--	#MarketCodes
+	--FROM
+	--	[AdvertiserReports].[dbo].Markets
+	--WHERE
+	--	LOWER(MarketName) LIKE @Market
+		
+SELECT 
+	DISTINCT    
+		MarketCode
+		--,dbo.Users.LastName
+		--,dbo.Users.FirstName
+	INTO
+		#MarketCodes		
+FROM         
+		[AdvertiserReports].[dbo].[Users] INNER JOIN
+		[AdvertiserReports].[dbo].[UserMarkets] ON [AdvertiserReports].[dbo].[Users].[NetworkID] = [AdvertiserReports].[dbo].[UserMarkets].[NetworkID] INNER JOIN
+		[AdvertiserReports].[dbo].[Markets] ON [AdvertiserReports].[dbo].UserMarkets.[MarketID] = [AdvertiserReports].[dbo].[Markets].[MarketID]
+   WHERE 
+		[AdvertiserReports].[dbo].[Users].[NetworkID] LIKE  ( CASE WHEN @UserID = ' ' THEN '%_' ELSE ISNULL(@UserID,'%_') END ) 
+		--dbo.Users.LastName like '%blackburn%'	
+		
+--SELECT * FROM #MarketCodes	
+
+
+--SET @Market = '%' + LOWER(@Market) + '%'
+--SELECT @Market	
+			
+			
+						
+
+SELECT
+		a.idCampaign 
+		,c.MarketName
+		,LOWER(a.MarketCode) as MarketCode
+		,LOWER(a.MarketCode2) as MarketCode2
+		,a.[CampaignCustomer]
+		,a.[CampaignAdvertiser]
+		,a.[CampaignStartDate]
+		,a.[CampaignEndDate]
+		,Replace(a.[PLATFORM],' ','') as [PLATFORM]
+		,a.[OrderID]
+		,a.[PlacementID]
+		,a.[CampaignName]
+		,a.FlightName
+		,a.CampaignSchedImps
+		,a.[Start Date]
+		,a.[End Date]
+		,a.[PositionSize]
+		,IsNull(b.[PlacementID],'') as [PlacementID]
+		,IsNull(b.[name],'') as [PlacementName]
+		,IsNull(b.[AdUnit],'') as [AdUnit]
+FROM
+	[AdvertiserReports].[dbo].[vw_ActiveCampaigns] a WITH (NOLOCK) 
+	
+	LEFT OUTER JOIN	[AdvertiserReports].[dbo].[tbl_Sum_AdUnits] b WITH (NOLOCK) 
+		ON
+			b.PlacementID = a.PlacementID 
+			
+	LEFT OUTER JOIN	[AdvertiserReports].[dbo].Markets c WITH (NOLOCK)
+		ON
+			(
+			c.MarketCode = LOWER(a.MarketCode)
+			OR 
+			c.MarketCode = LOWER(a.MarketCode2)
+			)
+				
+WHERE
+	LOWER([PLATFORM]) = @Platform 	 
+	and 	
+		(
+		LOWER(c.MarketCode ) IN (SELECT MarketCode FROM #MarketCodes) 		
+		)
+	--AND 
+	
+	--	(
+	--	LOWER(a.MarketCode ) IN (SELECT MarketCode FROM #MarketCodes) 
+	--	OR
+	--	LOWER(a.MarketCode2 )IN (SELECT MarketCode FROM #MarketCodes) 
+		
+	--	)	
+
+	and IsNull(b.[PlacementID],'') <> ''
+
+	
+	
+	
+END 
+		
